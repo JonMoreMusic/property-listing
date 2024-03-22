@@ -45,11 +45,11 @@
                     @if ( !empty(request('bedrooms')) )
                         with
                         {{ request('bedrooms') }}
-                            @if( request('bedrooms') == 1 )
-                                {{ __('Bedroom') }}
-                            @else
+                        @if( request('bedrooms') == 1 )
+                            {{ __('Bedroom') }}
+                        @else
                             {{ __('Bedrooms') }}
-                            @endif
+                        @endif
                     @endif
 
                     @if (request('price') == 100000)

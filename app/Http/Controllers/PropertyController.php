@@ -9,6 +9,7 @@ use App\Mail\EnquireEmail;
 use Illuminate\Support\Facades\Mail;
 use App\Jobs\ProcessEnquireEmail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PropertyController extends Controller
 {
@@ -16,52 +17,56 @@ class PropertyController extends Controller
 //--------------------------- Property Search bar ------------------------------------------------
     public function index(Request $request) {
 
-        $latest_properties = Property::latest();
         $locations = Location::select(['id', 'name'])->get();
 
-        if(!empty($request->sale)) {
-            $latest_properties = $latest_properties->where('sale', $request->sale);
-        }
+        $latest_properties = Cache::remember('latest_properties_' . $request->getQueryString(), 60, function() use ($request) {
 
-        if(!empty($request->location)) {
-            $latest_properties = $latest_properties->where('location_id', $request->location);
-        }
+            $latest_properties = Property::latest();
 
-        if(!empty($request->type)) {
-            $latest_properties = $latest_properties->where('type', $request->type);
-        }
-
-        if(!empty($request->price)) {
-            if($request->price == '500000+') {
-                $latest_properties = $latest_properties->where('price', '>', 500000);
+            if(!empty($request->sale)) {
+                $latest_properties = $latest_properties->where('sale', $request->sale);
             }
-            elseif($request->price == '500000') {
-                $latest_properties = $latest_properties->where('price', '>', 400000)->where('price', '<=', 500000);
-            }
-            elseif($request->price == '400000') {
-                $latest_properties = $latest_properties->where('price', '>', 300000)->where('price', '<=', 400000);
-            }
-            elseif($request->price == '300000') {
-                $latest_properties = $latest_properties->where('price', '>', 200000)->where('price', '<=', 300000);
-            }
-            elseif($request->price == '200000') {
-                $latest_properties = $latest_properties->where('price', '>', 100000)->where('price', '<=', 200000);
-            }
-            else {
-                $latest_properties = $latest_properties->where('price', '>', 0)->where('price', '<=', 100000);
-            }
-        }
 
-        if(!empty($request->bedrooms)) {
-            $latest_properties = $latest_properties->where('bedrooms', $request->bedrooms);
-        }
+            if(!empty($request->location)) {
+                $latest_properties = $latest_properties->where('location_id', $request->location);
+            }
 
-        if(!empty($request->property_name)) {
-            $latest_properties = $latest_properties->where('name', 'LIKE', '%'. $request->property_name .'%');
-        }
+            if(!empty($request->type)) {
+                $latest_properties = $latest_properties->where('type', $request->type);
+            }
 
+            if(!empty($request->price)) {
+                if($request->price == '500000+') {
+                    $latest_properties = $latest_properties->where('price', '>', 500000);
+                }
+                elseif($request->price == '500000') {
+                    $latest_properties = $latest_properties->where('price', '>', 400000)->where('price', '<=', 500000);
+                }
+                elseif($request->price == '400000') {
+                    $latest_properties = $latest_properties->where('price', '>', 300000)->where('price', '<=', 400000);
+                }
+                elseif($request->price == '300000') {
+                    $latest_properties = $latest_properties->where('price', '>', 200000)->where('price', '<=', 300000);
+                }
+                elseif($request->price == '200000') {
+                    $latest_properties = $latest_properties->where('price', '>', 100000)->where('price', '<=', 200000);
+                }
+                else {
+                    $latest_properties = $latest_properties->where('price', '>', 0)->where('price', '<=', 100000);
+                }
+            }
 
-        $latest_properties = $latest_properties->paginate(12);
+            if(!empty($request->bedrooms)) {
+                $latest_properties = $latest_properties->where('bedrooms', $request->bedrooms);
+            }
+
+            if(!empty($request->property_name)) {
+                $latest_properties->where('name', 'LIKE', '%'. $request->property_name .'%');
+            }
+
+                return $latest_properties->paginate(12);
+        });
+
 
         return view('property.index', ['latest_properties' => $latest_properties, 'locations' => $locations]);
     }
@@ -105,7 +110,7 @@ class PropertyController extends Controller
 
     public function store(Request $request)
     {
-        //
+
     }
 
 //--------------------------- Single/individual Property Show(frontend) ------------------------------------------------

@@ -4,8 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class Property extends Model
 {
@@ -21,6 +25,17 @@ class Property extends Model
     //    public function featured() {
     //        $this->belongsTo(Media::class, 'featured_media_id');
     //    }
+
+
+
+    //public static function latest()
+    //{
+
+      //  return Cache::remember('properties', 60, function (){
+     //       return DB::table('properties')->get()->where('price', '>', 400000)->where('price', '<=', 500000);
+     //  });
+
+   // }
 
     public function location() {
         return $this->belongsTo(Location::class, 'location_id');
