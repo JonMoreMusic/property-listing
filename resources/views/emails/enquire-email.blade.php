@@ -15,6 +15,10 @@
         <p><strong>Phone: </strong>{{ $data[0]['phone'] }}</p>
         <p><strong>Email: </strong>{{ $data[0]['email'] }}</p>
         <p><strong>Message: </strong>{{ $data[0]['message'] }}</p>
+        <p><strong>Searched locations during session: </strong></p>
+        @foreach($data['searched_locations'] as $searched_location)
+            <p><strong></strong>{{ $searched_location }}</p>
+        @endforeach
     </div>
 
 </div>

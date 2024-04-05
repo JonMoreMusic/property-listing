@@ -17,9 +17,32 @@ class PropertyController extends Controller
 //--------------------------- Property Search bar ------------------------------------------------
     public function index(Request $request) {
 
-        $locations = Location::select(['id', 'name'])->get();
+        $locations = Cache::remember('all_locations', 3600, function() use ($request){
+            return Location::select(['id', 'name'])->get();
+        });
 
-        $latest_properties = Cache::remember('latest_properties_' . $request->getQueryString(), 60, function() use ($request) {
+/*        if (!empty($request->location)) {
+            $cachedLocationsKey = 'searched_locations';
+            $searchedLocations = Cache::get($cachedLocationsKey, []);
+            $location = Location::find($request->location); //optimize this query. Use Id instead of select *
+            if ($location) {
+                $searchedLocations[$location->id] = $location->name;
+                Cache::put($cachedLocationsKey, $searchedLocations, 3600);
+            }
+        }*/
+
+ //       // session way of doing above. ChatGPT
+        if (!empty($request->location)) {
+            $searchedLocations = session('searched_locations', []);
+            $location = Location::find($request->location);
+          //  $location = $latest_properties->where('location_id', $request->location);
+            if ($location) {
+                $searchedLocations[$location->id] = $location->name;
+                session(['searched_locations' => $searchedLocations]);
+            }
+        }
+
+        $latest_properties = Cache::remember('latest_properties_' . $request->getQueryString(), 3600, function() use ($request) {
 
             $latest_properties = Property::latest();
 
@@ -67,7 +90,6 @@ class PropertyController extends Controller
                 return $latest_properties->paginate(12);
         });
 
-
         return view('property.index', ['latest_properties' => $latest_properties, 'locations' => $locations]);
     }
 
@@ -75,6 +97,9 @@ class PropertyController extends Controller
 //--------------------------- asking ques by user ------------------------------------------------
     public function enquire(Request $request, $propertyID)
     {
+        $locations = Location::select(['id', 'name'])->get();
+        //->where('location_id', $request->location)
+
         $request->validate([
             'name'  => ['required', 'max:255'],
             'phone' => ['required', 'max:255'],
@@ -91,8 +116,17 @@ class PropertyController extends Controller
             'message'  => $request->message . '\nThis message was sent from '. route('property.show',$propertyID) . ' website.',
         ]);
 
+        // session way of doing it. ChatGpt
+             $searchedLocations = session('searched_locations', []);
+       // $searchedLocations = Cache::get('searched_locations');
+
         // Send User & Admin mail/message
-        $data = [$request->all(), 'propertyURL' => route('property.show', $propertyID)];
+        $data = [
+            $request->all(),
+            'propertyURL' => route('property.show', $propertyID),
+            'searched_locations' => $searchedLocations
+        ];
+       // dd($data);
 
         // Send User & Admin mail/message via Queue
         ProcessEnquireEmail::dispatch($data);
