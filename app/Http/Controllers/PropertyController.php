@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\EmailSendingFailed;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyEnquire;
 use App\Mail\EnquireEmail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Jobs\ProcessEnquireEmail;
 use Illuminate\Http\Request;
@@ -116,20 +118,33 @@ class PropertyController extends Controller
             'message'  => $request->message . '\nThis message was sent from '. route('property.show',$propertyID) . ' website.',
         ]);
 
-        // session way of doing it. ChatGpt
-             $searchedLocations = session('searched_locations', []);
-       // $searchedLocations = Cache::get('searched_locations');
+        try {
+            // Simulate failed email if message contains "FAIL"
+            if ($request->message === 'FAIL') {
+                Log::error('Enquiry email failed intentionally: ' . $request->message);
+                throw new \Exception('Enquiry email failed intentionally.');
+            }
 
-        // Send User & Admin mail/message
-        $data = [
-            $request->all(),
-            'propertyURL' => route('property.show', $propertyID),
-            'searched_locations' => $searchedLocations
-        ];
-       // dd($data);
+            // session way of doing it. ChatGpt
+            $searchedLocations = session('searched_locations', []);
+            // $searchedLocations = Cache::get('searched_locations');
+
+            // Send User & Admin mail/message
+            $data = [
+                $request->all(),
+                'propertyURL' => route('property.show', $propertyID),
+                'searched_locations' => $searchedLocations
+            ];
+            // dd($data);
+
+            ProcessEnquireEmail::dispatch($data);
+        } catch (\Exception $e) {
+            event(new EmailSendingFailed($e->getMessage()));
+            return redirect()->back()->with(['message'=>'Failed to send message. Something went wrong']);
+        }
 
         // Send User & Admin mail/message via Queue
-        ProcessEnquireEmail::dispatch($data);
+      //  ProcessEnquireEmail::dispatch($data);
         // Mail::send(new EnquireEmail($data));     // Send User & Admin mail/message via normal way
 
         return redirect()->back()->with(['message'=>'Message sent successfully']);
