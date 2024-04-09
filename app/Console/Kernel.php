@@ -21,7 +21,7 @@ class Kernel extends ConsoleKernel
 
       //  $schedule->command(log::class::info('First Schedule ran at 09:49'))->dailyAt('09:49');
         $schedule->command(SendFailedEnquiryLog::class)->dailyAt('09:49');
-      //  $schedule->command(log::class::info('Second Schedule ran at 09:49'))->dailyAt('09:49');
+
     }
 
     /**
